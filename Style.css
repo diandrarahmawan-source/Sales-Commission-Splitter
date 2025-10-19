@@ -1,254 +1,279 @@
-// --- Data Mockup (Sales List) ---
-const SALES_LIST = [
-    { id: 1, name: "Diandra" },
-    { id: 2, name: "Miftah" },
-    { id: 3, name: "Dewan" },
-    { id: 4, name: "Arman" },
-    { id: 5, name: "Kusnandar" },
-    { id: 6, name: "Gunawan" },
-    { id: 7, name: "Nury" },
-    { id: 8, name: "Anto" },
-    { id: 9, name: "Dewi" }
-];
-
-const COMMISSION_RATES = {
-    LEAD_GEN: 0.25,
-    TELEMARKETING: 0.25,
-    CONVERSION: 0.50,
-    COMBINED: 0.75 // 25% + 50%
-};
-
-let latestCommissionDetails = [];
-
-// --- Utility Functions ---
-
-/**
- * Mengubah angka menjadi format Rupiah (Rp).
- * @param {number} number
- * @returns {string}
- */
-function formatRupiah(number) {
-    if (number === undefined || number === null || isNaN(number)) return 'Rp 0';
-    const cleanNumber = Math.round(number);
-    // Menggunakan Intl.NumberFormat Indonesia (IDR)
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(cleanNumber);
+/* Global Reset and Base Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-/**
- * Menampilkan modal pesan kustom.
- * @param {string} title
- * @param {string} body
- */
-function showModal(title, body) {
-    document.getElementById('modal-title').textContent = title;
-    document.getElementById('modal-body').textContent = body;
-    document.getElementById('message-modal').classList.remove('hidden');
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f7ff7f7;
+    line-height: 1.5;
 }
 
-// --- Core Calculation Logic ---
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
 
-/**
- * Menghitung pembagian komisi berdasarkan logika bisnis.
- * @param {number} price - Harga Properti
- * @param {string[]} leadGens - Array nama Lead Generator
- * @param {string} telemarketing - Nama staf Telemarketing
- * @param {string} conversion - Nama staf Lead Conversion
- * @returns {Object[]} - Detail pembagian komisi
- */
-function calculateSplit(price, leadGens, telemarketing, conversion) {
-    const total = price;
-    const results = [];
-    const leadgensCount = leadGens.length;
-    
-    // 1. Lead Generator Share (25% split equally)
-    if (leadgensCount > 0) {
-        const leadgenPool = total * COMMISSION_RATES.LEAD_GEN;
-        // Gunakan Math.round untuk pembulatan Rupiah terdekat
-        const leadgenShare = Math.round(leadgenPool / leadgensCount);
-        const leadgenPercentage = (COMMISSION_RATES.LEAD_GEN / leadgensCount) * 100;
+/* Header & Typography */
+header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
 
-        leadGens.forEach(name => {
-            const salesPerson = SALES_LIST.find(s => s.name === name);
-            results.push({
-                sales_id: salesPerson.id,
-                name: name,
-                role: 'Lead Generator',
-                percentage: leadgenPercentage,
-                amount: leadgenShare
-            });
-        });
+.text-4xl { font-size: 2.25rem; }
+.text-lg { font-size: 1.125rem; }
+.text-xs { font-size: 0.75rem; }
+.font-extrabold { font-weight: 800; }
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+
+.text-indigo-800 { color: #3730a3; }
+.text-indigo-700 { color: #4338ca; }
+.text-gray-600 { color: #4b5563; }
+.text-gray-400 { color: #9ca3af; }
+.text-red-600 { color: #dc2626; }
+.text-green-600 { color: #16a34a; }
+
+/* Navigation (Simplified) */
+.nav-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.nav-button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    transition: all 150ms ease-in-out;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.nav-button.active {
+    background-color: #4f46e5;
+    color: white;
+}
+
+.nav-button:not(.active) {
+    background-color: white;
+    color: #4f46e5;
+    border-color: #4f46e5;
+}
+
+.nav-button:not(.active):hover {
+    background-color: #eef2ff;
+}
+
+/* Card and Layout */
+.grid-layout {
+    display: grid;
+    gap: 2rem;
+    grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+    .grid-layout {
+        grid-template-columns: 1fr 1fr;
     }
-
-    const isCombined = telemarketing === conversion;
-
-    // 2. Telemarketing Share (25%) and Conversion Share (50%)
-    if (isCombined) {
-        // Combined Role (Telemarketing + Conversion = 75%)
-        const combinedShare = Math.round(total * COMMISSION_RATES.COMBINED);
-        const salesPerson = SALES_LIST.find(s => s.name === telemarketing);
-        results.push({
-            sales_id: salesPerson.id,
-            name: telemarketing,
-            role: 'Telemarketing & Conversion',
-            percentage: COMMISSION_RATES.COMBINED * 100,
-            amount: combinedShare
-        });
-    } else {
-        // Separate Roles
-        const teleShare = Math.round(total * COMMISSION_RATES.LEAD_GEN); // 25%
-        const convShare = Math.round(total * COMMISSION_RATES.CONVERSION); // 50%
-
-        // Telemarketing (25%)
-        const telePerson = SALES_LIST.find(s => s.name === telemarketing);
-        results.push({
-            sales_id: telePerson.id,
-            name: telemarketing,
-            role: 'Telemarketing',
-            percentage: COMMISSION_RATES.LEAD_GEN * 100,
-            amount: teleShare
-        });
-
-        // Conversion (50%)
-        const convPerson = SALES_LIST.find(s => s.name === conversion);
-        results.push({
-            sales_id: convPerson.id,
-            name: conversion,
-            role: 'Lead Conversion',
-            percentage: COMMISSION_RATES.CONVERSION * 100,
-            amount: convShare
-        });
-    }
-
-    return results;
 }
 
-// --- DOM Manipulation and Event Handlers ---
-
-function populateSalesDropdowns() {
-    const telemarketingEl = document.getElementById('telemarketing');
-    const conversionEl = document.getElementById('conversion');
-    const leadgensContainer = document.getElementById('leadgens-checkbox-container');
-
-    const salesOptions = SALES_LIST.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-    
-    // Populate Dropdowns
-    telemarketingEl.innerHTML += salesOptions;
-    conversionEl.innerHTML += salesOptions;
-
-    // Populate Checkboxes
-    leadgensContainer.innerHTML = SALES_LIST.map(s => `
-        <label>
-            <input type="checkbox" name="leadgen_name" value="${s.name}">
-            <span>${s.name}</span>
-        </label>
-    `).join('');
+.card {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    height: fit-content;
 }
 
-function handleCalculate() {
-    const priceEl = document.getElementById('price');
-    const telemarketingEl = document.getElementById('telemarketing');
-    const conversionEl = document.getElementById('conversion');
-    const leadgensContainer = document.getElementById('leadgens-checkbox-container');
-
-    const price = parseFloat(priceEl.value);
-    const selectedLeadGens = Array.from(leadgensContainer.querySelectorAll('input[name="leadgen_name"]:checked')).map(input => input.value);
-    const telemarketing = telemarketingEl.value;
-    const conversion = conversionEl.value;
-
-    // --- Validation ---
-    if (!price || price <= 0) {
-        showModal("Kesalahan Input", "Harga Properti harus diisi dengan angka yang valid.");
-        return;
-    }
-    if (selectedLeadGens.length === 0) {
-        showModal("Kesalahan Input", "Minimal harus memilih satu Lead Generator.");
-        return;
-    }
-    if (!telemarketing || !conversion) {
-        showModal("Kesalahan Input", "Semua peran (Telemarketing dan Conversion) harus dipilih.");
-        return;
-    }
-    // --- End Validation ---
-
-    latestCommissionDetails = calculateSplit(price, selectedLeadGens, telemarketing, conversion);
-
-    // Display Results
-    const totalCommission = latestCommissionDetails.reduce((sum, item) => sum + item.amount, 0);
-    
-    document.getElementById('output-price').textContent = formatRupiah(price);
-    document.getElementById('output-total-commission').textContent = formatRupiah(totalCommission);
-
-    const tableBody = document.getElementById('commission-table-body');
-    tableBody.innerHTML = ''; // Clear previous results
-    
-    latestCommissionDetails.forEach(detail => {
-        const row = tableBody.insertRow();
-        row.className = 'hover:bg-gray-50';
-        
-        const nameCell = row.insertCell();
-        nameCell.textContent = detail.name;
-        
-        const roleCell = row.insertCell();
-        roleCell.textContent = detail.role;
-        
-        const percentageCell = row.insertCell();
-        percentageCell.textContent = `${detail.percentage.toFixed(2)}%`;
-        percentageCell.classList.add('text-right');
-        
-        const nominalCell = row.insertCell();
-        nominalCell.textContent = formatRupiah(detail.amount);
-        nominalCell.classList.add('text-right', 'font-bold', 'text-indigo-600');
-    });
-
-    // Show result card
-    document.getElementById('result-card').classList.remove('hidden');
+/* Form Styles */
+.space-y-4 > * + * {
+    margin-top: 1rem;
 }
 
-function setupEventListeners() {
-    // Set default date to today
-    document.getElementById('date').value = new Date().toISOString().split('T')[0];
-
-    // Calculate Button
-    document.getElementById('calculate-btn').addEventListener('click', handleCalculate);
-
-    // Modal Close Button
-    document.getElementById('modal-close-btn').addEventListener('click', () => {
-        document.getElementById('message-modal').classList.add('hidden');
-    });
-
-    // Checkbox Max Limit Logic
-    const leadgensContainer = document.getElementById('leadgens-checkbox-container');
-    const helpText = document.getElementById('leadgen-help-text');
-
-    leadgensContainer.addEventListener('change', (event) => {
-        if (event.target.type === 'checkbox') {
-            const checkedCount = leadgensContainer.querySelectorAll('input[name="leadgen_name"]:checked').length;
-            
-            if (checkedCount > 10) {
-                event.target.checked = false; // Uncheck the box that caused the overflow
-                showModal("Batas Maksimum", "Maksimal hanya 10 Lead Generator yang dapat dipilih.");
-            }
-            
-            // Update helper text style
-            if (checkedCount >= 10) {
-                helpText.textContent = "Batas maksimal 10 Lead Generator telah tercapai.";
-                helpText.style.color = '#dc2626'; /* text-red-600 */
-            } else {
-                helpText.textContent = "Ceklis nama staf yang terlibat. (Maksimal 10).";
-                helpText.style.color = '#6b7280'; /* text-gray-500 */
-            }
-        }
-    });
+label {
+    display: block;
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500;
+    color: #374151; /* text-gray-700 */
+    margin-bottom: 0.25rem;
 }
 
-// Initialization on window load
-window.onload = function() {
-    populateSalesDropdowns();
-    setupEventListeners();
-};
+input[type="number"],
+input[type="date"],
+select {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: border-color 150ms, box-shadow 150ms;
+}
+
+input:focus, select:focus {
+    border-color: #4f46e5;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.help-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
+
+/* Checkbox Container */
+.checkbox-container {
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+    max-height: 10rem;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.5rem;
+}
+
+.checkbox-container label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #374151;
+    cursor: pointer;
+    transition: color 150ms;
+    margin: 0;
+    font-weight: 400;
+}
+
+.checkbox-container label:hover {
+    color: #4f46e5;
+}
+
+/* Buttons */
+.button {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    border-radius: 0.75rem;
+    transition: background-color 150ms, box-shadow 150ms;
+    cursor: pointer;
+    border: none;
+}
+
+.button-calculate {
+    background-color: #10b981; /* green-500 */
+    color: white;
+    box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.1);
+}
+
+.button-calculate:hover {
+    background-color: #059669; /* green-700 */
+}
+
+.button.disabled {
+    background-color: #d1d5db;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.button-close {
+    background-color: #4f46e5;
+    color: white;
+}
+
+.button-close:hover {
+    background-color: #4338ca;
+}
+
+/* Table Styles */
+.overflow-x-auto {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead {
+    background-color: #eef2ff; /* indigo-50 */
+}
+
+th {
+    padding: 0.75rem 0.75rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #4f46e5;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+th.text-right {
+    text-align: right;
+}
+
+tbody {
+    background-color: white;
+    border-top: 1px solid #e5e7eb;
+}
+
+td {
+    padding: 0.75rem 0.75rem;
+    font-size: 0.875rem;
+    color: #374151;
+    white-space: nowrap;
+}
+
+tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+td.text-right {
+    text-align: right;
+}
+
+/* Utility/State Classes */
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mt-6 { margin-top: 1.5rem; }
+.hidden { display: none !important; }
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(75, 85, 99, 0.75); /* gray-600 with opacity */
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    max-width: 24rem;
+    width: 100%;
+    transform: scale(0.95);
+    transition: transform 300ms;
+}
+
+.modal:not(.hidden) .modal-content {
+    transform: scale(1);
+}
 
